@@ -62,7 +62,7 @@ $stale_notice = !empty($station['stale']);
     </script>
 </head>
 
-<body class="<?php echo htmlspecialchars(implode(' ', $page['body_classes']), ENT_QUOTES, 'UTF-8'); ?>">
+<body>
     <div id="overlay" tabindex="0" aria-label="Drag, swipe, or use arrow keys to orbit the wave view"></div>
 
     <main id="ui">

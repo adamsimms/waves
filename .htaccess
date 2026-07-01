@@ -1,8 +1,10 @@
 RewriteEngine On
 
-# Legacy entry points (wave.php / wave2.php removed; index.php handles all layouts)
-RewriteRule ^wave\.php$ ?layout=wide [R=301,L,QSA]
-RewriteRule ^wave2\.php$ ?layout=wide&station=0 [R=301,L,QSA]
+# Legacy entry points and query-string URLs → canonical /
+RewriteRule ^wave\.php$ ? [R=301,L]
+RewriteRule ^wave2\.php$ ? [R=301,L]
+RewriteCond %{QUERY_STRING} (^|&)layout=
+RewriteRule ^(index\.php)?$ ? [R=301,L]
 
 <IfModule mod_headers.c>
     Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com https://region1.analytics.google.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
