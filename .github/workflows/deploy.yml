@@ -97,5 +97,6 @@ jobs:
             --exclude '.git/' \
             --exclude '.git*/' \
             --exclude '.github/' \
+            --exclude 'cache/erddap-latest.json' \
             -e "ssh -i ${HOME}/.ssh/deploy_key -o BatchMode=yes -p 22 -l ${user}" \
             ./ "${dest}"

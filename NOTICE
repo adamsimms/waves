@@ -1,0 +1,13 @@
+Waves
+=====
+
+This project bundles a WebGL FFT ocean simulation (`simulation.js`, `shared.js`,
+`waves.js`) derived from publicly circulated WebGL ocean demos that implement
+Stockham FFT spectrum updates on the GPU.
+
+Buoy integration, PHP proxying, layout consolidation, and station polling were
+added for pinchards.is/waves.
+
+Data source attribution:
+
+- SmartAtlantic / ERDDAP — https://www.smartatlantic.ca/erddap/

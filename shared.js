@@ -1,7 +1,3 @@
-//var INITIAL_SIZE = 250,
-//  INITIAL_WIND = [10.0, 10.0];
-//INITIAL_CHOPPINESS = 1.5;
-
 var CLEAR_COLOR = [1.0, 1.0, 1.0, 0.0],
     GEOMETRY_ORIGIN = [-1000.0, -1000.0],
     SUN_DIRECTION = [-1.0, 1.0, 1.0],
@@ -25,30 +21,6 @@ var INITIAL_SPECTRUM_UNIT = 0,
     PING_TRANSFORM_UNIT = 6,
     PONG_TRANSFORM_UNIT = 7;
 
-var UI_COLOR = 'rgb(52, 137, 189)';
-
-var PROFILE_AMPLITUDE = 50,
-    PROFILE_OMEGA = 0.05,
-    PROFILE_PHI = -2.5,
-    PROFILE_STEP = 5,
-    PROFILE_OFFSET = 52,
-    PROFILE_COLOR = 'rgb(52, 137, 189)',
-    PROFILE_LINE_WIDTH = 3,
-    CHOPPINESS_SCALE = 0.15;
-
-var ARROW_ORIGIN = [-1250, 0, 500],
-    ARROW_SHAFT_WIDTH = 80,
-    ARROW_HEAD_WIDTH = 160,
-    ARROW_HEAD_HEIGHT = 60,
-    ARROW_OFFSET = 40,
-    WIND_SCALE = 8.0,
-    MIN_WIND_SPEED = 5.0,
-    MAX_WIND_SPEED = 25.0;
-
-var HANDLE_COLOR = '#666666',
-    SLIDER_LEFT_COLOR = UI_COLOR,
-    SLIDER_RIGHT_COLOR = '#999999';
-
 var FOV = (60 / 180) * Math.PI,
     NEAR = 1,
     FAR = 10000,
@@ -60,44 +32,12 @@ var WIND_SPEED_DECIMAL_PLACES = 1,
 
 var SENSITIVITY = 1.0;
 
-var WIND_SPEED_X = -1350;
-var MIN_WIND_SPEED_Z = 600,
-    WIND_SPEED_OFFSET = 30;
-
 var OVERLAY_DIV_ID = 'overlay',
-    PROFILE_CANVAS_ID = 'profile',
     SIMULATOR_CANVAS_ID = 'simulator',
-    UI_DIV_ID = 'ui',
-    CAMERA_DIV_ID = 'camera',
-    WIND_SPEED_DIV_ID = 'wind',
-    WIND_SPEED_SPAN_ID = 'wind-speed',
-    CHOPPINESS_DIV_ID = 'choppiness';
-
-var SIZE_SLIDER_X = -200,
-    SIZE_SLIDER_Z = 1100,
-    SIZE_SLIDER_LENGTH = 400,
-    MIN_SIZE = 100,
-    MAX_SIZE = 1000,
-    SIZE_SLIDER_BREADTH = 3,
-    SIZE_HANDLE_SIZE = 24;
-
-var CHOPPINESS_SLIDER_X = -1420,
-    CHOPPINESS_SLIDER_Z = 75,
-    CHOPPINESS_SLIDER_LENGTH = 300,
-    MIN_CHOPPINESS = 0,
-    MAX_CHOPPINESS = 2.5,
-    CHOPPINESS_SLIDER_BREADTH = 6,
-    CHOPPINESS_HANDLE_SIZE = 30;
-
-var ARROW_TIP_RADIUS = 100,
-    SIZE_HANDLE_RADIUS = 30,
-    CHOPPINESS_HANDLE_RADIUS = 100;
+    UI_DIV_ID = 'ui';
 
 var NONE = 0,
-    ORBITING = 1,
-    ROTATING = 2,
-    SLIDING_SIZE = 3,
-    SLIDING_CHOPPINESS = 4;
+    ORBITING = 1;
 
 var CAMERA_DISTANCE = 2000,
     ORBIT_POINT = [0.0, 0.0, 0.0],
@@ -399,50 +339,6 @@ var buildFramebuffer = function (gl, attachment) {
     return framebuffer;
 };
 
-var epsilon = function (x) {
-    return Math.abs(x) < 0.000001 ? 0 : x;
-};
-
-var toCSSMatrix = function (m) { //flip y to make css and webgl coordinates consistent
-    return 'matrix3d(' +
-        epsilon(m[0]) + ',' +
-        -epsilon(m[1]) + ',' +
-        epsilon(m[2]) + ',' +
-        epsilon(m[3]) + ',' +
-        epsilon(m[4]) + ',' +
-        -epsilon(m[5]) + ',' +
-        epsilon(m[6]) + ',' +
-        epsilon(m[7]) + ',' +
-        epsilon(m[8]) + ',' +
-        -epsilon(m[9]) + ',' +
-        epsilon(m[10]) + ',' +
-        epsilon(m[11]) + ',' +
-        epsilon(m[12]) + ',' +
-        -epsilon(m[13]) + ',' +
-        epsilon(m[14]) + ',' +
-        epsilon(m[15]) +
-        ')';
-};
-
-var setPerspective = function (element, value) {
-    element.style.WebkitPerspective = value;
-    element.style.perspective = value;
-};
-
-var setTransformOrigin = function (element, value) {
-    element.style.WebkitTransformOrigin = value;
-    element.style.transformOrigin = value;
-};
-
-var setTransform = function (element, value) {
-    element.style.WebkitTransform = value;
-    element.style.transform = value;
-};
-
-var setText = function (element, value, decimalPlaces) {
-    element.textContent = value.toFixed(decimalPlaces);
-};
-
 var getMousePosition = function (event, element) {
     var boundingRect = element.getBoundingClientRect();
     return {
@@ -465,7 +361,7 @@ var hasWebGLSupportWithExtensions = function (extensions) {
 
     for (var i = 0; i < extensions.length; ++i) {
         if (gl.getExtension(extensions[i]) === null) {
-            return false
+            return false;
         }
     }
 
