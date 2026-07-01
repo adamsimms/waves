@@ -1,5 +1,6 @@
 RewriteEngine On
 
+# Legacy entry points (wave.php / wave2.php removed; index.php handles all layouts)
 RewriteRule ^wave\.php$ ?layout=wide [R=301,L,QSA]
 RewriteRule ^wave2\.php$ ?layout=wide&station=0 [R=301,L,QSA]
 

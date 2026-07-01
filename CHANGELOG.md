@@ -3,56 +3,47 @@
 ## Unreleased
 
 ### Added
-- `og-image.png` for social link previews
-- PHP lint + PHPUnit workflow (`.github/workflows/php.yml`)
-- `health.php` monitoring endpoint
-- Scheduled production uptime checks (`.github/workflows/uptime.yml`)
-- Keyboard orbit controls (arrow keys)
-- PHPUnit coverage for `lib/erddap.php`
-- Content-Security-Policy header in `.htaccess`
-- `wave_period` exposed in API JSON and station readout
+- `assets/` tree: `assets/css/`, `assets/js/`, `assets/images/`
+- Deploy smoke tests for static asset URLs
 
 ### Changed
-- Station panel labels: **Wave period** (seconds) and **Wave height** (metres)
-- Google Fonts loaded via CSS2 API (`fonts.googleapis.com/css2`)
-- Open Graph / Twitter images point to `og-image.png`
+- Static files moved out of the site root into `assets/`
+- `NOTICE` merged into `LICENSE` (Attributions section)
+- README documents project layout and legacy URL handling
+- Twitter Card uses `summary` (no social preview image for now)
+
+### Removed
+- `wave.php` and `wave2.php` (legacy URLs redirect via `.htaccess` only)
+- `og-image.png`, `og-image.svg`, and Open Graph image meta tags
+- Standalone `NOTICE` file
+
+## 2026-07-01 — Pass 3
+
+### Added
+- PHP lint + PHPUnit CI, `health.php`, uptime workflow
+- Keyboard orbit, CSP header, `wave_period` in API JSON
+
+### Changed
+- Station labels: wave period (s), wave height (m)
+- Google Fonts via CSS2 API
 
 ## 2026-07-01 — Pass 2
 
 ### Added
-- Named ERDDAP column parsing via `columnNames`
-- Wind direction support (`wind_dir_avg` → `wind_x` / `wind_y`)
-- ERDDAP cache lock to prevent upstream stampedes
-- `robots.txt`, `sitemap.xml`, `favicon.svg`, and `og-image.svg`
-- `.htaccess` legacy redirects and static asset cache headers
-- Touch orbit controls and `prefers-reduced-motion` handling
-- Shader compile/link error reporting
-- Deploy workflow cache permissions step and `call-api.php` smoke test
+- Named ERDDAP columns, wind direction, cache lock
+- `robots.txt`, `sitemap.xml`, `favicon.svg`, `.htaccess` redirects
+- Touch controls, shader error reporting, deploy hardening
 
 ### Changed
-- Canonical URLs no longer include `index.php`
-- Wide layout CSS no longer overridden by `waves.js` resize inline styles
-- `layout-immersive` renamed to `layout-wide-cinematic`
-- Station boot config consolidated into `window.STATION`
-- Deploy workflow renamed from "Deploy SFTP" to "Deploy"
+- Canonical URLs, wide layout fix, `window.STATION`, `layout-wide-cinematic`
 
 ### Removed
-- Unused vector helpers from `shared.js`
-- Redundant `hidden` attribute on the station panel (CSS `station-hidden` only)
-- Legacy orbit mode state (`NONE` / `ORBITING`)
+- Unused vector helpers, redundant station `hidden` attribute
 
-### Fixed
-- Wide layout canvas positioning
-- `<time datetime>` updates during polling
-- ERDDAP `NaN` / missing values preserving last good readings
-- `call-api.php` `Cache-Control: max-age=10`
-
-## 2026-07-01
+## 2026-07-01 — Pass 1
 
 ### Added
-- Initial GitHub import and consolidation pass
-- Shared `lib/erddap.php`, single `index.php`, `station-poll.js`
-- SEO meta tags, README, LICENSE, and NOTICE
+- Single `index.php`, `lib/erddap.php`, `station-poll.js`, SEO meta, LICENSE
 
 ### Removed
-- jQuery, `ui.js`, and hidden 3D camera UI
+- jQuery, `ui.js`, hidden 3D camera UI
