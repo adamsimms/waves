@@ -1,0 +1,16 @@
+{
+    "name": "adamsimms/waves",
+    "description": "Live WebGL ocean wave simulation for the St. John's SmartAtlantic buoy",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload-dev": {
+        "files": [
+            "lib/erddap.php"
+        ]
+    }
+}

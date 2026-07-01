@@ -2,7 +2,7 @@
 #
 # Secrets: FTP_SERVER, FTP_USERNAME, FTP_SERVER_DIR, SSH_DEPLOY_KEY
 # (same DreamHost deploy key as pinchards.is; FTP_SERVER_DIR is the site root)
-name: Deploy SFTP
+name: Deploy
 
 on:
   push:
@@ -97,5 +97,32 @@ jobs:
             --exclude '.git/' \
             --exclude '.git*/' \
             --exclude '.github/' \
+            --exclude 'cache/erddap-latest.json' \
+            --exclude 'cache/erddap.lock' \
+            --exclude 'vendor/' \
+            --exclude '.phpunit.cache/' \
             -e "ssh -i ${HOME}/.ssh/deploy_key -o BatchMode=yes -p 22 -l ${user}" \
             ./ "${dest}"
+
+      - name: Ensure cache directory is writable
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run != true }}
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          set -euo pipefail
+          host="$(printf '%s' "${FTP_SERVER}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          user="$(printf '%s' "${FTP_USERNAME}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          server_dir="$(printf '%s' "${FTP_SERVER_DIR}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          server_dir="${server_dir%/}/waves"
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -p 22 "${user}@${host}" \
+            "mkdir -p '${server_dir}/cache' && chmod 775 '${server_dir}/cache'"
+
+      - name: Smoke test call-api.php
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run != true }}
+        run: |
+          set -euo pipefail
+          curl -fsS "https://www.pinchards.is/waves/call-api.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data"
+          curl -fsS "https://www.pinchards.is/waves/health.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'status' in data"
+          echo "Smoke tests passed."

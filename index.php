@@ -1,153 +1,131 @@
 <?php
-date_default_timezone_set("UTC");
 
-$currentDate =  date("Y-m-d\TH:i:s\Z");
-//echo $currentDate . '<br />';
+declare(strict_types=1);
 
-$time = strtotime($currentDate) - (3* 24*60 * 60);
-$starttDate = date("Y-m-d\TH:i:s\Z", $time);
+require_once __DIR__ . '/lib/erddap.php';
+require_once __DIR__ . '/lib/layout.php';
 
-//echo $starttDate . '<br />';
-
-$url = "https://www.smartatlantic.ca/erddap/tabledap/SMA_st_johns.json?station_name,time,longitude,latitude,wind_spd_avg,wind_spd_max,wind_dir_avg,air_temp_avg,air_pressure_avg,air_humidity_avg,air_dewpoint_avg,surface_temp_avg,wave_ht_max,wave_ht_sig,wave_period_max,wave_dir_avg,wave_spread_avg,curr_dir_avg,curr_spd_avg&time>=" . $starttDate . "&time<=" . $currentDate;
-
-//echo $url;
-$result = file_get_contents($url);
-$data = (json_decode($result, true));
-//print_r($data);
-//print_r($data['table']['rows'][0]);
-//echo $data;
-$sizeRows = sizeof($data['table']['rows']);
-$wdata = $data['table']['rows'][$sizeRows - 1];
-//print_r($wdata);
-$wind = $wdata[4];
-$size = (100 + $wdata[14]); // wave_period_max
-$choppiness = $wdata[12]; // wave_ht_max
-//echo '<br /> WIND=> '.$wind;
-//echo '<br /> size=> '.$size;
-//echo '<br /> choppiness=> '.$choppiness;
-
-
-// exit;
-// $size = isset($_GET['size']) ? $_GET['size'] : 100;
-// $choppiness = isset($_GET['choppiness']) ? $_GET['choppiness'] : 1.1;
-// $wind = isset($_GET['wind']) ? $_GET['wind'] : 10;
+$page = resolve_page_layout();
+$station = station_data_with_fallback();
+$client_station = station_client_payload($station);
+$stale_notice = !empty($station['stale']);
+$og_image = SITE_BASE_URL . '/og-image.png';
 ?>
-
 <!DOCTYPE html>
-<html>
-
+<html lang="en-CA">
 <head>
     <meta charset="utf-8">
-    <title>Waves</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<?php echo htmlspecialchars($page['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
 
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet" type="text/css">
-    <link href="waves.css" rel="stylesheet" type="text/css">
-    <style>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="favicon.svg">
 
-        .stationName {
-            color: #333333;
-            font-size: 12px;
-            font-family: 'Open Sans', sans-serif;
-            width: 300px;
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($page['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:image" content="<?php echo htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:locale" content="en_CA">
 
-        }
-        .stationName div,span{
-            font-size: 12px !important;
-        }
-        .stationName #choppiness{
-            position: inherit;
-        }
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8'); ?>">
 
-    </style>
+    <meta name="theme-color" content="#0a1a2e">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link href="waves.css" rel="stylesheet">
+
+    <script type="application/ld+json">
+    <?php
+    echo json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'WebApplication',
+        'name' => 'Waves — St. John\'s Buoy',
+        'description' => $page['page_description'],
+        'url' => $page['canonical_url'],
+        'dateModified' => $station['time'],
+        'applicationCategory' => 'VisualizationApplication',
+        'operatingSystem' => 'Web browser',
+        'isAccessibleForFree' => true,
+        'creator' => [
+            '@type' => 'Person',
+            'name' => 'Adam Simms',
+        ],
+        'keywords' => 'ocean waves, WebGL, buoy data, St. John\'s, Newfoundland, SmartAtlantic, ERDDAP',
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    ?>
+    </script>
 </head>
 
-<body>
-    <div id="overlay"></div>
-    <div id="ui">
-        
+<body class="<?php echo htmlspecialchars(implode(' ', $page['body_classes']), ENT_QUOTES, 'UTF-8'); ?>">
+    <div id="overlay" tabindex="0" aria-label="Drag, swipe, or use arrow keys to orbit the wave view"></div>
 
-        <div class="stationName">
-            <div><?php echo $wdata[0]; ?></div>
-            <div id="datetime"> <?php echo date("Y-m-d H:i:s ", strtotime($wdata[1])); ?></div>
-            <div>WIND <span id="wind-speed"></span><span id="wind-unit"> m/s</span></div>
-            <div>SIZE <span id="size-value"></span><span id="size-unit"> m</span></div>
-            <div>CHOPPINESS <span id="choppiness"></span></div>
-        </div>
+    <main id="ui">
+        <section class="station-panel" id="station-panel" aria-label="Buoy conditions">
+            <h1 class="station-panel__heading">Live Ocean Waves</h1>
+            <p class="station-panel__station" id="station-name"><?php echo htmlspecialchars((string) $station['station_name'], ENT_QUOTES, 'UTF-8'); ?></p>
+            <p class="station-panel__meta">
+                <time id="station-datetime" datetime="<?php echo htmlspecialchars((string) $station['time'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php echo htmlspecialchars((string) $station['time_display'], ENT_QUOTES, 'UTF-8'); ?>
+                </time>
+                <?php if ($stale_notice): ?>
+                    <span class="station-panel__stale">Data may be stale</span>
+                <?php endif; ?>
+            </p>
+            <dl class="station-panel__metrics">
+                <div>
+                    <dt>Wind</dt>
+                    <dd><span id="station-wind"></span> m/s</dd>
+                </div>
+                <div>
+                    <dt>Wave period</dt>
+                    <dd><span id="station-period"></span> s</dd>
+                </div>
+                <div>
+                    <dt>Wave height</dt>
+                    <dd><span id="station-choppiness"></span> m</dd>
+                </div>
+            </dl>
+            <p class="station-panel__source">
+                Live data from
+                <a href="https://www.smartatlantic.ca/erddap/" rel="noopener noreferrer">SmartAtlantic ERDDAP</a>.
+                Drag, swipe, or use arrow keys to orbit the view.
+            </p>
+        </section>
+    </main>
 
-        <div id="camera" style="display: none;">
-            <canvas id="profile" width="350" height="105"></canvas>
-            <div id="length"></div>
-            <div id="end"></div>
-            <div id="wind">
-                <span id="wind-speed"></span><span id="wind-unit"> m/s</span>
-                <div id="wind-label">WIND</div>
-            </div>
-
-            <div id="size">
-                <span id="size-value"></span><span id="size-unit"> m</span>
-            </div>
-            <div id="size-label">SIZE</div>
-            <div id="choppiness"></div>
-            <div id="choppiness-label">CHOPPINESS</div>
-        </div>
+    <div class="simulator-wrap">
+        <canvas id="simulator" aria-label="Ocean wave simulation"></canvas>
     </div>
-    <canvas id="simulator"></canvas>
 
-    <div id="error">Your browser does not appear to support the required technologies.</div>
-    <script src="jquery.js"></script>
-
+    <p id="error" role="alert">Your browser does not appear to support the required WebGL extensions.</p>
 
     <script>
-        var INITIAL_SIZE = <?php echo $size; ?>,
-            INITIAL_WIND = [<?php echo $wind; ?>, <?php echo $wind; ?>],
-            INITIAL_CHOPPINESS = <?php echo $choppiness; ?>;
+        window.STATION = <?php echo json_encode($client_station, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+        var INITIAL_SIZE = window.STATION.size;
+        var INITIAL_WIND = [window.STATION.windX, window.STATION.windY];
+        var INITIAL_CHOPPINESS = window.STATION.choppiness;
     </script>
-
 
     <script src="shared.js"></script>
     <script src="simulation.js"></script>
-    <script src="ui.js"></script>
     <script src="waves.js"></script>
+    <script src="station-poll.js"></script>
 
-    <script>
-
-        $(document).ready(function() {
-            $("#choppiness").text(INITIAL_CHOPPINESS);
-
-            function getLatestData(){
-                console.log('updating new values');
-                $.ajax({
-                type: "GET",
-                url: "call-api.php",
-                success: function(json_data){
-                    var resp = $.parseJSON(json_data);
-                    $("#choppiness").text(resp.choppiness);
-                    $("#wind-speed").text(resp.wind);
-                    $("#size-value").text(resp.size);
-                    $("#datetime").text(resp.time);
-                    console.log(resp);
-                }
-                });
-            }
-            
-            setInterval(function () {
-                getLatestData();
-            },10*1000);
-
-        });
-    </script>
-		
-    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G1XKSQNT5M"></script>
     <script>
-         window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-         gtag('js', new Date());
-
-         gtag('config', 'G-G1XKSQNT5M');
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-G1XKSQNT5M');
     </script>
-
 </body>
-
 </html>
