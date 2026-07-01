@@ -13,6 +13,9 @@ const ERDDAP_CACHE_TTL_SECONDS = 60;
  *   time: string,
  *   time_display: string,
  *   wind: float,
+ *   wind_dir: float|null,
+ *   wind_x: float,
+ *   wind_y: float,
  *   size: float,
  *   choppiness: float,
  *   longitude: float|null,
@@ -28,10 +31,22 @@ function fetch_latest_station_data(bool $use_cache = true): array
         }
     }
 
-    $data = erddap_fetch_from_api();
-    erddap_write_cache($data);
+    $lock = erddap_acquire_lock();
+    try {
+        if ($use_cache) {
+            $cached = erddap_read_cache();
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
 
-    return $data;
+        $data = erddap_fetch_from_api();
+        erddap_write_cache($data);
+
+        return $data;
+    } finally {
+        erddap_release_lock($lock);
+    }
 }
 
 /**
@@ -40,6 +55,9 @@ function fetch_latest_station_data(bool $use_cache = true): array
  *   time: string,
  *   time_display: string,
  *   wind: float,
+ *   wind_dir: float|null,
+ *   wind_x: float,
+ *   wind_y: float,
  *   size: float,
  *   choppiness: float,
  *   longitude: float|null,
@@ -78,39 +96,136 @@ function erddap_fetch_from_api(): array
     }
 
     $rows = $payload['table']['rows'] ?? null;
-    if (!is_array($rows) || count($rows) === 0) {
+    $column_names = $payload['table']['columnNames'] ?? null;
+    if (!is_array($rows) || count($rows) === 0 || !is_array($column_names)) {
         throw new RuntimeException('No buoy readings returned for the requested time range.');
     }
 
     $latest = $rows[count($rows) - 1];
-    if (!is_array($latest) || count($latest) < 15) {
+    if (!is_array($latest) || count($latest) !== count($column_names)) {
         throw new RuntimeException('Unexpected ERDDAP row shape.');
     }
 
-    $observed_at = (string) $latest[1];
-    $wind = erddap_to_float($latest[4]);
-    $choppiness = erddap_to_float($latest[12]);
-    $wave_period = erddap_to_float($latest[14]);
+    $fields = erddap_row_to_fields($column_names, $latest);
+    $previous = erddap_read_stale_cache() ?? erddap_default_station_data();
+
+    return erddap_build_station_data($fields, $previous);
+}
+
+/**
+ * @param array<string, mixed> $data
+ * @return array<string, mixed>
+ */
+function erddap_normalize_station_data(array $data): array
+{
+    if (!isset($data['wind_x'], $data['wind_y'])) {
+        $components = erddap_wind_components(
+            (float) ($data['wind'] ?? 10.0),
+            erddap_optional_float($data['wind_dir'] ?? null),
+            $data
+        );
+        $data['wind_x'] = $components['wind_x'];
+        $data['wind_y'] = $components['wind_y'];
+    }
+
+    return $data;
+}
+
+/**
+ * @param list<string> $column_names
+ * @param list<mixed> $row
+ * @return array<string, mixed>
+ */
+function erddap_row_to_fields(array $column_names, array $row): array
+{
+    $fields = [];
+    foreach ($column_names as $index => $name) {
+        $fields[$name] = $row[$index] ?? null;
+    }
+
+    return $fields;
+}
+
+/**
+ * @param array<string, mixed> $fields
+ * @param array<string, mixed> $previous
+ * @return array<string, mixed>
+ */
+function erddap_build_station_data(array $fields, array $previous): array
+{
+    $observed_at = erddap_string_value($fields['time'] ?? null, (string) ($previous['time'] ?? gmdate('Y-m-d\TH:i:s\Z')));
+    $wind = erddap_resolve_float($fields['wind_spd_avg'] ?? null, (float) ($previous['wind'] ?? 10.0));
+    $wind_dir = erddap_optional_float($fields['wind_dir_avg'] ?? null);
+    if ($wind_dir === null && isset($previous['wind_dir'])) {
+        $wind_dir = erddap_optional_float($previous['wind_dir']);
+    }
+
+    $wave_period = erddap_resolve_float($fields['wave_period_max'] ?? null, max(0.0, (float) ($previous['size'] ?? 250.0) - 100.0));
+    $choppiness = erddap_resolve_float($fields['wave_ht_max'] ?? null, (float) ($previous['choppiness'] ?? 1.5));
+    $components = erddap_wind_components($wind, $wind_dir, $previous);
 
     return [
-        'station_name' => (string) $latest[0],
+        'station_name' => erddap_string_value($fields['station_name'] ?? null, (string) ($previous['station_name'] ?? "St. John's Buoy")),
         'time' => $observed_at,
         'time_display' => date('Y-m-d H:i:s', strtotime($observed_at)),
         'wind' => $wind,
+        'wind_dir' => $wind_dir,
+        'wind_x' => $components['wind_x'],
+        'wind_y' => $components['wind_y'],
         'size' => 100 + $wave_period,
         'choppiness' => $choppiness,
-        'longitude' => erddap_optional_float($latest[2] ?? null),
-        'latitude' => erddap_optional_float($latest[3] ?? null),
+        'longitude' => erddap_optional_float($fields['longitude'] ?? null) ?? erddap_optional_float($previous['longitude'] ?? null),
+        'latitude' => erddap_optional_float($fields['latitude'] ?? null) ?? erddap_optional_float($previous['latitude'] ?? null),
     ];
 }
 
-function erddap_to_float(mixed $value): float
+/**
+ * @param array<string, mixed> $previous
+ * @return array{wind_x: float, wind_y: float}
+ */
+function erddap_wind_components(float $speed, ?float $direction, array $previous): array
 {
-    if ($value === null || $value === '') {
-        return 0.0;
+    if ($direction !== null && $speed > 0) {
+        $radians = deg2rad($direction);
+
+        return [
+            'wind_x' => -$speed * sin($radians),
+            'wind_y' => -$speed * cos($radians),
+        ];
     }
 
-    return (float) $value;
+    if (isset($previous['wind_x'], $previous['wind_y']) && $speed > 0) {
+        $previous_speed = hypot((float) $previous['wind_x'], (float) $previous['wind_y']);
+        if ($previous_speed > 0) {
+            $scale = $speed / $previous_speed;
+
+            return [
+                'wind_x' => (float) $previous['wind_x'] * $scale,
+                'wind_y' => (float) $previous['wind_y'] * $scale,
+            ];
+        }
+    }
+
+    return [
+        'wind_x' => $speed,
+        'wind_y' => $speed,
+    ];
+}
+
+function erddap_string_value(mixed $value, string $fallback): string
+{
+    if ($value === null || $value === '' || erddap_is_missing($value)) {
+        return $fallback;
+    }
+
+    return (string) $value;
+}
+
+function erddap_resolve_float(mixed $value, float $fallback): float
+{
+    $parsed = erddap_optional_float($value);
+
+    return $parsed ?? $fallback;
 }
 
 function erddap_optional_float(mixed $value): ?float
@@ -119,12 +234,74 @@ function erddap_optional_float(mixed $value): ?float
         return null;
     }
 
-    return (float) $value;
+    if (is_string($value) && erddap_is_missing($value)) {
+        return null;
+    }
+
+    if (!is_numeric($value)) {
+        return null;
+    }
+
+    $float = (float) $value;
+    if (!is_finite($float)) {
+        return null;
+    }
+
+    return $float;
+}
+
+function erddap_is_missing(mixed $value): bool
+{
+    if (!is_string($value)) {
+        return false;
+    }
+
+    $normalized = strtolower(trim($value));
+
+    return in_array($normalized, ['nan', 'null', 'na', 'n/a', '-', '--'], true);
 }
 
 function erddap_cache_path(): string
 {
     return dirname(__DIR__) . '/cache/erddap-latest.json';
+}
+
+function erddap_lock_path(): string
+{
+    return dirname(__DIR__) . '/cache/erddap.lock';
+}
+
+/**
+ * @return resource
+ */
+function erddap_acquire_lock()
+{
+    $path = erddap_lock_path();
+    $directory = dirname($path);
+    if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+        throw new RuntimeException('Unable to create cache directory.');
+    }
+
+    $lock = fopen($path, 'c+');
+    if ($lock === false) {
+        throw new RuntimeException('Unable to open ERDDAP cache lock.');
+    }
+
+    if (!flock($lock, LOCK_EX)) {
+        fclose($lock);
+        throw new RuntimeException('Unable to acquire ERDDAP cache lock.');
+    }
+
+    return $lock;
+}
+
+/**
+ * @param resource $lock
+ */
+function erddap_release_lock($lock): void
+{
+    flock($lock, LOCK_UN);
+    fclose($lock);
 }
 
 /**
@@ -151,7 +328,7 @@ function erddap_read_cache(): ?array
         return null;
     }
 
-    return $payload['data'];
+    return erddap_normalize_station_data($payload['data']);
 }
 
 /**
@@ -183,7 +360,11 @@ function station_data_to_json(array $data): string
     return json_encode([
         'station_name' => $data['station_name'],
         'time' => $data['time_display'],
+        'time_iso' => $data['time'],
         'wind' => $data['wind'],
+        'wind_dir' => $data['wind_dir'] ?? null,
+        'wind_x' => $data['wind_x'],
+        'wind_y' => $data['wind_y'],
         'size' => $data['size'],
         'choppiness' => $data['choppiness'],
     ], JSON_UNESCAPED_SLASHES) ?: '{}';
@@ -200,22 +381,39 @@ function station_data_with_fallback(): array
         $cached = erddap_read_stale_cache();
         if ($cached !== null) {
             $cached['stale'] = true;
+            $cached['error'] = $exception->getMessage();
+
             return $cached;
         }
 
-        return [
-            'station_name' => "St. John's Buoy",
-            'time' => gmdate('Y-m-d\TH:i:s\Z'),
-            'time_display' => gmdate('Y-m-d H:i:s'),
-            'wind' => 10.0,
-            'size' => 250.0,
-            'choppiness' => 1.5,
-            'longitude' => null,
-            'latitude' => null,
-            'stale' => true,
-            'error' => $exception->getMessage(),
-        ];
+        $fallback = erddap_default_station_data();
+        $fallback['stale'] = true;
+        $fallback['error'] = $exception->getMessage();
+
+        return $fallback;
     }
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function erddap_default_station_data(): array
+{
+    $components = erddap_wind_components(10.0, null, []);
+
+    return [
+        'station_name' => "St. John's Buoy",
+        'time' => gmdate('Y-m-d\TH:i:s\Z'),
+        'time_display' => gmdate('Y-m-d H:i:s'),
+        'wind' => 10.0,
+        'wind_dir' => null,
+        'wind_x' => $components['wind_x'],
+        'wind_y' => $components['wind_y'],
+        'size' => 250.0,
+        'choppiness' => 1.5,
+        'longitude' => null,
+        'latitude' => null,
+    ];
 }
 
 /**
@@ -238,5 +436,5 @@ function erddap_read_stale_cache(): ?array
         return null;
     }
 
-    return $payload['data'];
+    return erddap_normalize_station_data($payload['data']);
 }

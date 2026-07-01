@@ -2,6 +2,7 @@
     'use strict';
 
     var POLL_INTERVAL_MS = 10000;
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function formatDecimal(value, places) {
         return Number(value).toFixed(places);
@@ -17,8 +18,13 @@
         if (stationName && data.station_name) {
             stationName.textContent = data.station_name;
         }
-        if (datetime && data.time) {
-            datetime.textContent = data.time;
+        if (datetime) {
+            if (data.time) {
+                datetime.textContent = data.time;
+            }
+            if (data.time_iso) {
+                datetime.setAttribute('datetime', data.time_iso);
+            }
         }
         if (wind && data.wind !== undefined) {
             wind.textContent = formatDecimal(data.wind, WIND_SPEED_DECIMAL_PLACES);
@@ -32,12 +38,18 @@
     }
 
     function applyToSimulator(data) {
+        if (reducedMotion) {
+            return;
+        }
+
         var simulator = window.wavesSimulator;
         if (!simulator) {
             return;
         }
 
-        if (data.wind !== undefined) {
+        if (data.wind_x !== undefined && data.wind_y !== undefined) {
+            simulator.setWind(data.wind_x, data.wind_y);
+        } else if (data.wind !== undefined) {
             simulator.setWind(data.wind, data.wind);
         }
         if (data.size !== undefined) {
@@ -68,18 +80,22 @@
                 return response.json();
             })
             .then(updateFromPayload)
-            .catch(function (error) {
-                console.warn('Station poll failed:', error);
+            .catch(function () {
+                // Keep the last rendered values when polling fails.
             });
     }
 
     function initStationReadout() {
+        var station = window.STATION || {};
         updateFromPayload({
-            station_name: window.STATION_NAME,
-            time: window.STATION_TIME,
-            wind: window.INITIAL_WIND[0],
-            size: window.INITIAL_SIZE,
-            choppiness: window.INITIAL_CHOPPINESS
+            station_name: station.name,
+            time: station.time,
+            time_iso: station.timeIso,
+            wind: station.wind,
+            wind_x: station.windX,
+            wind_y: station.windY,
+            size: station.size,
+            choppiness: station.choppiness
         });
     }
 

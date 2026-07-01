@@ -1,0 +1,10 @@
+RewriteEngine On
+
+RewriteRule ^wave\.php$ ?layout=wide [R=301,L,QSA]
+RewriteRule ^wave2\.php$ ?layout=wide&station=0 [R=301,L,QSA]
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|svg|ico)$">
+        Header set Cache-Control "public, max-age=604800, immutable"
+    </FilesMatch>
+</IfModule>

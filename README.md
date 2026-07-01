@@ -14,35 +14,52 @@ All views are served from `index.php` with query parameters:
 |-----|-------------|-------------|
 | `/` | `index.php` | Default view with station readout |
 | `?layout=wide` | `wave.php` | Wide panoramic canvas |
-| `?layout=wide&station=0` | `wave2.php` | Wide canvas, station panel hidden |
+| `?layout=wide&station=0` | `wave2.php` | Wide cinematic canvas, station panel hidden |
 
-`wave.php` and `wave2.php` remain as permanent redirects for old links.
+`wave.php` and `wave2.php` remain as permanent redirects (PHP and `.htaccess`) for old links.
 
 ## Project structure
 
 ```
 index.php           Single HTML entry point (layouts via query string)
 call-api.php        JSON endpoint for the 10s polling loop
-lib/erddap.php      Shared ERDDAP fetch, cache, and error handling
+lib/
+  erddap.php        ERDDAP fetch, named columns, cache lock, NaN handling
+  layout.php        Layout flags, canonical URLs, client payload helper
 station-poll.js     Polls call-api.php; updates readout + simulator
-shared.js           Shared constants and math helpers
+shared.js           Shared constants, math helpers, shader utilities
 simulation.js       WebGL FFT ocean simulator
 waves.js            Page bootstrap, camera orbit, render loop
 waves.css           Layout and station panel styles
-cache/              Server-writable ERDDAP response cache (gitignored data file)
+cache/              Server-writable ERDDAP cache and lock files
+robots.txt          Crawler rules
+sitemap.xml         Public layout URLs
+favicon.svg         Site icon
+og-image.svg        Social preview image
+.htaccess           Legacy redirects and static asset cache headers
 ```
 
 ## Data mapping
 
-ERDDAP columns are mapped in `lib/erddap.php`:
+ERDDAP columns are mapped by name in `lib/erddap.php`:
 
 | Simulation input | ERDDAP field | Notes |
 |------------------|--------------|-------|
-| Wind (m/s) | `wind_spd_avg` | Applied equally on X and Y axes |
+| Wind speed (m/s) | `wind_spd_avg` | Scalar wind speed |
+| Wind direction | `wind_dir_avg` | Meteorological degrees; converted to `wind_x` / `wind_y` |
 | Choppiness | `wave_ht_max` | Significant wave height proxy |
 | Size | `100 + wave_period_max` | Wave period (seconds) offset by 100 for the shader range |
 
-Responses are cached for 60 seconds in `cache/erddap-latest.json` to limit upstream requests. If ERDDAP is unreachable, the app serves the last cached reading or safe fallback defaults.
+Wind components use the meteorological convention (direction wind is **from**):
+
+```
+wind_x = -speed * sin(direction)
+wind_y = -speed * cos(direction)
+```
+
+Missing or `NaN` readings fall back to the previous cached value when possible.
+
+Responses are cached for 60 seconds in `cache/erddap-latest.json` with a file lock in `cache/erddap.lock` to prevent upstream stampedes.
 
 ## Local development
 
@@ -63,6 +80,11 @@ Open [http://localhost:8080/](http://localhost:8080/). The `cache/` directory mu
 
 On **push to `main`**, `.github/workflows/deploy.yml` rsyncs this repo to `waves/` on DreamHost (same server as [pinchards.is](https://github.com/adamsimms/pinchards.is)).
 
+The workflow also:
+
+- Ensures `cache/` exists and is writable (`chmod 775`)
+- Runs a smoke test against `call-api.php` after deploy
+
 ### Repository secrets
 
 Reuse the DreamHost deploy secrets from pinchards.is:
@@ -74,23 +96,29 @@ Reuse the DreamHost deploy secrets from pinchards.is:
 | `FTP_SERVER_DIR` | Site root, e.g. `/home/USER/pinchards.is` (workflow appends `/waves`) |
 | `SSH_DEPLOY_KEY` | ed25519 private key (base64-encoded single line) |
 
-Use **Actions → Deploy SFTP → Run workflow** with `dry_run: true` to preview changes.
-
-Ensure the deployed `cache/` directory is writable by the web server user after the first deploy.
+Use **Actions → Deploy → Run workflow** with `dry_run: true` to preview changes.
 
 ## SEO
 
 `index.php` includes:
 
 - Descriptive `<title>` and meta description
-- Canonical URL per layout
-- Open Graph and Twitter Card tags
-- JSON-LD `WebApplication` structured data
+- Clean canonical URLs (`https://www.pinchards.is/waves/`, no `index.php`)
+- Open Graph and Twitter Card tags with `og-image.svg`
+- JSON-LD `WebApplication` structured data with `dateModified`
 - Semantic HTML (`main`, `section`, `dl` metrics, `time` element)
-- Mobile viewport meta tag
+- `robots.txt`, `sitemap.xml`, and `favicon.svg`
 
-Optional: add `og-image.png` at the site root and wire `og:image` / `twitter:image` meta tags if you want rich link previews.
+## Accessibility
+
+- Touch orbit controls on mobile (`touch-action: none` on the overlay)
+- `prefers-reduced-motion` lowers orbit sensitivity and skips live simulator retuning during polls
+- Overlay is exposed to assistive tech with an orbit label
 
 ## License
 
 See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).

@@ -1,8 +1,13 @@
 if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linear'])) {
 
+    try {
+
     var simulatorCanvas = document.getElementById(SIMULATOR_CANVAS_ID),
         overlayDiv = document.getElementById(OVERLAY_DIV_ID),
-        uiDiv = document.getElementById(UI_DIV_ID);
+        uiDiv = document.getElementById(UI_DIV_ID),
+        isWideLayout = document.body.classList.contains('layout-wide'),
+        reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        orbitSensitivity = reducedMotion ? SENSITIVITY * 0.35 : SENSITIVITY;
 
     var camera = new Camera(),
         projectionMatrix = makePerspectiveMatrix(new Float32Array(16), FOV, MIN_ASPECT, NEAR, FAR);
@@ -13,49 +18,68 @@ if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linea
     var width = window.innerWidth,
         height = window.innerHeight;
 
-    var lastMouseX = 0;
-    var lastMouseY = 0;
-    var mode = NONE;
+    var lastPointerX = 0;
+    var lastPointerY = 0;
+    var isDragging = false;
 
-    var onMouseDown = function (event) {
-        event.preventDefault();
+    function pointerPosition(event) {
+        if (event.touches && event.touches.length > 0) {
+            return {
+                x: event.touches[0].clientX - uiDiv.getBoundingClientRect().left,
+                y: event.touches[0].clientY - uiDiv.getBoundingClientRect().top
+            };
+        }
 
-        var mousePosition = getMousePosition(event, uiDiv);
-        mode = ORBITING;
-        lastMouseX = mousePosition.x;
-        lastMouseY = mousePosition.y;
-    };
-    overlayDiv.addEventListener('mousedown', onMouseDown, false);
+        return getMousePosition(event, uiDiv);
+    }
 
-    overlayDiv.addEventListener('mousemove', function (event) {
-        event.preventDefault();
+    function onPointerDown(event) {
+        if (event.type === 'touchstart') {
+            event.preventDefault();
+        }
 
-        var mousePosition = getMousePosition(event, uiDiv),
-            mouseX = mousePosition.x,
-            mouseY = mousePosition.y;
+        var position = pointerPosition(event);
+        isDragging = true;
+        lastPointerX = position.x;
+        lastPointerY = position.y;
+        overlayDiv.style.cursor = 'grabbing';
+    }
 
-        if (mode === ORBITING) {
-            overlayDiv.style.cursor = 'grabbing';
-            camera.changeAzimuth((mouseX - lastMouseX) / width * SENSITIVITY);
-            camera.changeElevation((mouseY - lastMouseY) / height * SENSITIVITY);
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
-        } else {
+    function onPointerMove(event) {
+        if (!isDragging) {
             overlayDiv.style.cursor = 'grab';
+            return;
         }
-    });
 
-    overlayDiv.addEventListener('mouseup', function (event) {
-        event.preventDefault();
-        mode = NONE;
-    });
-
-    window.addEventListener('mouseout', function (event) {
-        var from = event.relatedTarget || event.toElement;
-        if (!from || from.nodeName === 'HTML') {
-            mode = NONE;
+        if (event.type === 'touchmove') {
+            event.preventDefault();
         }
-    });
+
+        var position = pointerPosition(event);
+        camera.changeAzimuth((position.x - lastPointerX) / width * orbitSensitivity);
+        camera.changeElevation((position.y - lastPointerY) / height * orbitSensitivity);
+        lastPointerX = position.x;
+        lastPointerY = position.y;
+        overlayDiv.style.cursor = 'grabbing';
+    }
+
+    function onPointerUp(event) {
+        if (event.type === 'touchend') {
+            event.preventDefault();
+        }
+
+        isDragging = false;
+        overlayDiv.style.cursor = 'grab';
+    }
+
+    overlayDiv.addEventListener('mousedown', onPointerDown, false);
+    overlayDiv.addEventListener('mousemove', onPointerMove, false);
+    overlayDiv.addEventListener('mouseup', onPointerUp, false);
+    overlayDiv.addEventListener('mouseleave', onPointerUp, false);
+    overlayDiv.addEventListener('touchstart', onPointerDown, { passive: false });
+    overlayDiv.addEventListener('touchmove', onPointerMove, { passive: false });
+    overlayDiv.addEventListener('touchend', onPointerUp, { passive: false });
+    overlayDiv.addEventListener('touchcancel', onPointerUp, { passive: false });
 
     var onresize = function () {
         var windowWidth = window.innerWidth,
@@ -69,16 +93,20 @@ if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linea
             simulator.resize(windowWidth, windowHeight);
             uiDiv.style.width = windowWidth + 'px';
             uiDiv.style.height = windowHeight + 'px';
-            simulatorCanvas.style.top = '0px';
-            uiDiv.style.top = '0px';
+            if (!isWideLayout) {
+                simulatorCanvas.style.top = '0px';
+                uiDiv.style.top = '0px';
+            }
             width = windowWidth;
             height = windowHeight;
         } else {
             var newHeight = windowWidth / MIN_ASPECT;
             makePerspectiveMatrix(projectionMatrix, FOV, windowWidth / newHeight, NEAR, FAR);
             simulator.resize(windowWidth, newHeight);
-            simulatorCanvas.style.top = (windowHeight - newHeight) * 0.5 + 'px';
-            uiDiv.style.top = (windowHeight - newHeight) * 0.5 + 'px';
+            if (!isWideLayout) {
+                simulatorCanvas.style.top = (windowHeight - newHeight) * 0.5 + 'px';
+                uiDiv.style.top = (windowHeight - newHeight) * 0.5 + 'px';
+            }
             uiDiv.style.width = windowWidth + 'px';
             uiDiv.style.height = newHeight + 'px';
             width = windowWidth;
@@ -98,6 +126,12 @@ if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linea
         requestAnimationFrame(render);
     };
     render();
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById('error').textContent = 'Unable to initialize the wave simulation.';
+        document.getElementById('error').style.display = 'block';
+    }
 
 } else {
     document.getElementById('error').style.display = 'block';

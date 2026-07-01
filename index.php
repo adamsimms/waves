@@ -3,55 +3,38 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib/erddap.php';
+require_once __DIR__ . '/lib/layout.php';
 
-$layout = $_GET['layout'] ?? 'default';
-$show_station = !isset($_GET['station']) || $_GET['station'] !== '0';
-
-$is_wide = $layout === 'wide';
-$is_immersive = $is_wide && !$show_station;
-
-$body_classes = ['layout-' . ($is_wide ? 'wide' : 'default')];
-if ($is_immersive) {
-    $body_classes[] = 'layout-immersive';
-}
-if (!$show_station) {
-    $body_classes[] = 'station-hidden';
-}
-
+$page = resolve_page_layout();
 $station = station_data_with_fallback();
-
-$page_title = "Live Ocean Waves — St. John's Buoy | SmartAtlantic";
-$page_description = 'Real-time WebGL ocean wave simulation driven by live wind and wave data from the SmartAtlantic St. John\'s buoy station off Newfoundland.';
-$canonical_path = 'index.php';
-if ($is_wide) {
-    $canonical_path .= '?layout=wide';
-    if (!$show_station) {
-        $canonical_path .= '&station=0';
-    }
-}
-$canonical_url = 'https://www.pinchards.is/waves/' . $canonical_path;
-
+$client_station = station_client_payload($station);
 $stale_notice = !empty($station['stale']);
+$og_image = SITE_BASE_URL . '/og-image.svg';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-CA">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php echo htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8'); ?></title>
-    <meta name="description" content="<?php echo htmlspecialchars($page_description, ENT_QUOTES, 'UTF-8'); ?>">
+    <title><?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="<?php echo htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($page['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
+
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="favicon.svg">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="<?php echo htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:description" content="<?php echo htmlspecialchars($page_description, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:url" content="<?php echo htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($page['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:image" content="<?php echo htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:locale" content="en_CA">
 
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="<?php echo htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta name="twitter:description" content="<?php echo htmlspecialchars($page_description, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8'); ?>">
 
     <meta name="theme-color" content="#0a1a2e">
 
@@ -66,8 +49,9 @@ $stale_notice = !empty($station['stale']);
         '@context' => 'https://schema.org',
         '@type' => 'WebApplication',
         'name' => 'Waves — St. John\'s Buoy',
-        'description' => $page_description,
-        'url' => $canonical_url,
+        'description' => $page['page_description'],
+        'url' => $page['canonical_url'],
+        'dateModified' => $station['time'],
         'applicationCategory' => 'VisualizationApplication',
         'operatingSystem' => 'Web browser',
         'isAccessibleForFree' => true,
@@ -81,12 +65,13 @@ $stale_notice = !empty($station['stale']);
     </script>
 </head>
 
-<body class="<?php echo htmlspecialchars(implode(' ', $body_classes), ENT_QUOTES, 'UTF-8'); ?>">
-    <div id="overlay" aria-hidden="true"></div>
+<body class="<?php echo htmlspecialchars(implode(' ', $page['body_classes']), ENT_QUOTES, 'UTF-8'); ?>">
+    <div id="overlay" aria-label="Drag to orbit the wave view"></div>
 
     <main id="ui">
-        <section class="station-panel" id="station-panel" aria-label="Buoy conditions"<?php echo $show_station ? '' : ' hidden'; ?>>
-            <h1 class="station-panel__title" id="station-name"><?php echo htmlspecialchars((string) $station['station_name'], ENT_QUOTES, 'UTF-8'); ?></h1>
+        <section class="station-panel" id="station-panel" aria-label="Buoy conditions">
+            <h1 class="station-panel__heading">Live Ocean Waves</h1>
+            <p class="station-panel__station" id="station-name"><?php echo htmlspecialchars((string) $station['station_name'], ENT_QUOTES, 'UTF-8'); ?></p>
             <p class="station-panel__meta">
                 <time id="station-datetime" datetime="<?php echo htmlspecialchars((string) $station['time'], ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo htmlspecialchars((string) $station['time_display'], ENT_QUOTES, 'UTF-8'); ?>
@@ -112,7 +97,7 @@ $stale_notice = !empty($station['stale']);
             <p class="station-panel__source">
                 Live data from
                 <a href="https://www.smartatlantic.ca/erddap/" rel="noopener noreferrer">SmartAtlantic ERDDAP</a>.
-                Drag to orbit the view.
+                Drag or swipe to orbit the view.
             </p>
         </section>
     </main>
@@ -124,11 +109,10 @@ $stale_notice = !empty($station['stale']);
     <p id="error" role="alert">Your browser does not appear to support the required WebGL extensions.</p>
 
     <script>
-        var INITIAL_SIZE = <?php echo json_encode($station['size']); ?>,
-            INITIAL_WIND = [<?php echo json_encode($station['wind']); ?>, <?php echo json_encode($station['wind']); ?>],
-            INITIAL_CHOPPINESS = <?php echo json_encode($station['choppiness']); ?>,
-            STATION_NAME = <?php echo json_encode($station['station_name']); ?>,
-            STATION_TIME = <?php echo json_encode($station['time_display']); ?>;
+        window.STATION = <?php echo json_encode($client_station, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+        var INITIAL_SIZE = window.STATION.size;
+        var INITIAL_WIND = [window.STATION.windX, window.STATION.windY];
+        var INITIAL_CHOPPINESS = window.STATION.choppiness;
     </script>
 
     <script src="shared.js"></script>

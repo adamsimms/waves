@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/erddap.php';
 
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: public, max-age=10');
 
 try {
     $data = fetch_latest_station_data();
