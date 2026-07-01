@@ -10,36 +10,56 @@ The page renders a GPU-accelerated FFT ocean simulation and feeds it with the la
 
 All views are served from `index.php` with query parameters:
 
-| URL | Former page | Description |
-|-----|-------------|-------------|
-| `/` | `index.php` | Default view with station readout |
-| `?layout=wide` | `wave.php` | Wide panoramic canvas |
-| `?layout=wide&station=0` | `wave2.php` | Wide cinematic canvas, station panel hidden |
+| URL | Description |
+|-----|-------------|
+| `/waves/` | Default view with station readout |
+| `/waves/?layout=wide` | Wide panoramic canvas |
+| `/waves/?layout=wide&station=0` | Wide cinematic canvas, station panel hidden |
 
-`wave.php` and `wave2.php` remain as permanent redirects (PHP and `.htaccess`) for old links.
+Legacy URLs (`wave.php`, `wave2.php`) redirect via `.htaccess` — no duplicate PHP entry points.
 
 ## Project structure
 
+The site root keeps only PHP endpoints and web metadata. Static assets live under `assets/`.
+
 ```
-index.php           Single HTML entry point (layouts via query string)
-call-api.php        JSON endpoint for the 10s polling loop
-health.php          Monitoring endpoint (cache + ERDDAP status)
-lib/
-  erddap.php        ERDDAP fetch, named columns, cache lock, NaN handling
-  layout.php        Layout flags, canonical URLs, client payload helper
-station-poll.js     Polls call-api.php; updates readout + simulator
-shared.js           Shared constants, math helpers, shader utilities
-simulation.js       WebGL FFT ocean simulator
-waves.js            Page bootstrap, camera orbit, render loop
-waves.css           Layout and station panel styles
-tests/              PHPUnit tests for lib/erddap.php
-cache/              Server-writable ERDDAP cache and lock files
-robots.txt          Crawler rules
-sitemap.xml         Public layout URLs
-favicon.svg         Site icon
-og-image.png        Social preview image (Open Graph / Twitter)
-.htaccess           Legacy redirects, CSP, and static asset cache headers
+waves/
+├── index.php              # HTML entry point
+├── call-api.php           # JSON polling endpoint
+├── health.php             # Monitoring endpoint
+├── lib/
+│   ├── erddap.php         # ERDDAP fetch, cache, NaN handling
+│   └── layout.php         # Layout flags, canonical URLs, asset paths
+├── assets/
+│   ├── css/
+│   │   └── waves.css
+│   ├── js/
+│   │   ├── shared.js      # Constants, math, shader helpers
+│   │   ├── simulation.js  # WebGL FFT ocean simulator
+│   │   ├── waves.js       # Bootstrap, orbit, render loop
+│   │   └── station-poll.js
+│   └── images/
+│       └── favicon.svg
+├── cache/                 # Writable ERDDAP cache (gitignored data)
+├── tests/                 # PHPUnit tests
+├── .htaccess              # Legacy redirects, CSP, cache headers
+├── robots.txt
+├── sitemap.xml
+├── composer.json
+├── phpunit.xml
+├── LICENSE                # MIT license + attributions
+├── CHANGELOG.md
+└── README.md
 ```
+
+### Why this layout
+
+| Layer | Location | Rationale |
+|-------|----------|-----------|
+| PHP endpoints | Site root | DreamHost serves `index.php` and JSON APIs directly |
+| Shared PHP | `lib/` | Reusable server logic, no public URLs |
+| CSS / JS / images | `assets/` | Cacheable static files, clear separation |
+| Tests | `tests/` | Not deployed; excluded from rsync implicitly by size |
 
 ## Data mapping
 
@@ -62,11 +82,9 @@ wind_y = -speed * cos(direction)
 
 Missing or `NaN` readings fall back to the previous cached value when possible.
 
-Responses are cached for 60 seconds in `cache/erddap-latest.json` with a file lock in `cache/erddap.lock` to prevent upstream stampedes.
+Responses are cached for 60 seconds in `cache/erddap-latest.json` with a file lock in `cache/erddap.lock`.
 
 ## Local development
-
-PHP is required for the ERDDAP proxy and JSON endpoint.
 
 ```bash
 php -S localhost:8080
@@ -76,8 +94,8 @@ Open [http://localhost:8080/](http://localhost:8080/). The `cache/` directory mu
 
 ### Requirements
 
-- PHP 8.0+ with `allow_url_fopen` (or swap in cURL in `lib/erddap.php`)
-- A browser with WebGL and `OES_texture_float` / `OES_texture_float_linear`
+- PHP 8.0+ with `allow_url_fopen`
+- WebGL with `OES_texture_float` and `OES_texture_float_linear`
 
 ### Tests
 
@@ -86,74 +104,55 @@ composer install
 composer exec phpunit
 ```
 
-GitHub Actions also runs `php -l` on every push/PR (`.github/workflows/php.yml`).
+CI runs `php -l` and PHPUnit on every push/PR (`.github/workflows/php.yml`).
 
 ## Deploy
 
-On **push to `main`**, `.github/workflows/deploy.yml` rsyncs this repo to `waves/` on DreamHost (same server as [pinchards.is](https://github.com/adamsimms/pinchards.is)).
+On **push to `main`**, `.github/workflows/deploy.yml` rsyncs to `waves/` on DreamHost.
 
-The workflow also:
-
-- Ensures `cache/` exists and is writable (`chmod 775`)
-- Smoke-tests `call-api.php` and `health.php` after deploy
-
-### Repository secrets
-
-Reuse the DreamHost deploy secrets from pinchards.is:
+The workflow ensures `cache/` is writable and smoke-tests `call-api.php` and `health.php`.
 
 | Secret | Notes |
 |--------|--------|
 | `FTP_SERVER` | SSH hostname |
 | `FTP_USERNAME` | Shell user |
-| `FTP_SERVER_DIR` | Site root, e.g. `/home/USER/pinchards.is` (workflow appends `/waves`) |
-| `SSH_DEPLOY_KEY` | ed25519 private key (base64-encoded single line) |
+| `FTP_SERVER_DIR` | Site root (workflow appends `/waves`) |
+| `SSH_DEPLOY_KEY` | ed25519 private key |
 
-Use **Actions → Deploy → Run workflow** with `dry_run: true` to preview changes.
+Use **Actions → Deploy → Run workflow** with `dry_run: true` to preview.
 
 ## Monitoring
 
 | Endpoint | Purpose |
 |----------|---------|
-| `health.php` | JSON status: cache writable, latest station fetch |
-| `call-api.php` | Live buoy JSON used by the page |
+| `health.php` | Cache writable + latest ERDDAP fetch |
+| `call-api.php` | Live buoy JSON |
 
-`.github/workflows/uptime.yml` curls production every 30 minutes. You can also point [UptimeRobot](https://uptimerobot.com/) or similar at:
-
-- `https://www.pinchards.is/waves/health.php`
-- `https://www.pinchards.is/waves/call-api.php`
+`.github/workflows/uptime.yml` checks production every 30 minutes.
 
 ## SEO
 
-`index.php` includes:
+- Descriptive title and meta description
+- Canonical URLs without `index.php`
+- Open Graph and Twitter Card tags (`summary` card; no `og:image` until a preview asset is added under `assets/images/`)
+- JSON-LD `WebApplication` with `dateModified`
+- `robots.txt`, `sitemap.xml`, favicon at `assets/images/favicon.svg`
 
-- Descriptive `<title>` and meta description
-- Clean canonical URLs (`https://www.pinchards.is/waves/`, no `index.php`)
-- Open Graph and Twitter Card tags with `og-image.png`
-- JSON-LD `WebApplication` structured data with `dateModified`
-- Semantic HTML (`main`, `section`, `dl` metrics, `time` element)
-- `robots.txt`, `sitemap.xml`, and `favicon.svg`
-
-Typography is loaded from [Google Fonts](https://fonts.google.com/specimen/Open+Sans) (Open Sans).
+Typography: [Open Sans](https://fonts.google.com/specimen/Open+Sans) via Google Fonts.
 
 ## Security
 
-`.htaccess` sets a Content-Security-Policy allowing:
-
-- Same-origin scripts and styles
-- Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`)
-- Google Analytics / Tag Manager
+`.htaccess` sets Content-Security-Policy for same-origin assets, Google Fonts, and Google Analytics.
 
 ## Accessibility
 
-- Touch orbit controls on mobile (`touch-action: none` on the overlay)
-- Keyboard orbit with arrow keys (focus the overlay)
-- `prefers-reduced-motion` lowers orbit sensitivity and skips live simulator retuning during polls
-- Overlay is exposed to assistive tech with an orbit label
+- Touch and keyboard (arrow keys) orbit controls
+- `prefers-reduced-motion` lowers sensitivity and skips live simulator retuning during polls
 
 ## License
 
-See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+[LICENSE](LICENSE) — MIT license with attributions for the ocean simulation, ERDDAP data source, and fonts.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+[CHANGELOG.md](CHANGELOG.md)

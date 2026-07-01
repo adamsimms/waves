@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 const SITE_BASE_URL = 'https://www.pinchards.is/waves';
+const ASSETS_URL = 'assets';
 
 /**
  * @return array{

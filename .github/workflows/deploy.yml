@@ -119,10 +119,16 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -p 22 "${user}@${host}" \
             "mkdir -p '${server_dir}/cache' && chmod 775 '${server_dir}/cache'"
 
-      - name: Smoke test call-api.php
+      - name: Smoke test production
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run != true }}
         run: |
           set -euo pipefail
-          curl -fsS "https://www.pinchards.is/waves/call-api.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data"
-          curl -fsS "https://www.pinchards.is/waves/health.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'status' in data"
+          base="https://www.pinchards.is/waves"
+          curl -fsS "${base}/call-api.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data"
+          curl -fsS "${base}/health.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'status' in data"
+          curl -fsS -o /dev/null "${base}/assets/css/waves.css"
+          curl -fsS -o /dev/null "${base}/assets/js/waves.js"
+          curl -fsS -o /dev/null "${base}/assets/images/favicon.svg"
+          code="$(curl -fsS -o /dev/null -w '%{http_code}' "${base}/wave.php")"
+          test "${code}" = "301" -o "${code}" = "200"
           echo "Smoke tests passed."

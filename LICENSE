@@ -19,3 +19,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Attributions
+
+This project bundles a WebGL FFT ocean simulation (`assets/js/simulation.js`,
+`assets/js/shared.js`, `assets/js/waves.js`) derived from publicly circulated
+WebGL ocean demos that implement Stockham FFT spectrum updates on the GPU. The
+implementation lineage is commonly associated with interactive WebGL ocean
+experiments built on Jerry Tessendorf's FFT wave model.
+
+Project-specific work includes SmartAtlantic buoy integration, PHP ERDDAP
+proxying, layout consolidation, station polling, and pinchards.is deployment.
+
+**Data:** [SmartAtlantic ERDDAP](https://www.smartatlantic.ca/erddap/)
+
+**Fonts:** [Open Sans](https://fonts.google.com/specimen/Open+Sans) via Google Fonts

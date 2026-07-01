@@ -9,7 +9,6 @@ $page = resolve_page_layout();
 $station = station_data_with_fallback();
 $client_station = station_client_payload($station);
 $stale_notice = !empty($station['stale']);
-$og_image = SITE_BASE_URL . '/og-image.png';
 ?>
 <!DOCTYPE html>
 <html lang="en-CA">
@@ -21,27 +20,25 @@ $og_image = SITE_BASE_URL . '/og-image.png';
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="<?php echo htmlspecialchars($page['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
 
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="icon" href="<?php echo ASSETS_URL; ?>/images/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="<?php echo ASSETS_URL; ?>/images/favicon.svg">
 
     <meta property="og:type" content="website">
     <meta property="og:title" content="<?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars($page['canonical_url'], ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:image" content="<?php echo htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:locale" content="en_CA">
 
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="<?php echo htmlspecialchars($page['page_title'], ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="twitter:description" content="<?php echo htmlspecialchars($page['page_description'], ENT_QUOTES, 'UTF-8'); ?>">
-    <meta name="twitter:image" content="<?php echo htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8'); ?>">
 
     <meta name="theme-color" content="#0a1a2e">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-    <link href="waves.css" rel="stylesheet">
+    <link href="<?php echo ASSETS_URL; ?>/css/waves.css" rel="stylesheet">
 
     <script type="application/ld+json">
     <?php
@@ -115,10 +112,10 @@ $og_image = SITE_BASE_URL . '/og-image.png';
         var INITIAL_CHOPPINESS = window.STATION.choppiness;
     </script>
 
-    <script src="shared.js"></script>
-    <script src="simulation.js"></script>
-    <script src="waves.js"></script>
-    <script src="station-poll.js"></script>
+    <script src="<?php echo ASSETS_URL; ?>/js/shared.js"></script>
+    <script src="<?php echo ASSETS_URL; ?>/js/simulation.js"></script>
+    <script src="<?php echo ASSETS_URL; ?>/js/waves.js"></script>
+    <script src="<?php echo ASSETS_URL; ?>/js/station-poll.js"></script>
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G1XKSQNT5M"></script>
     <script>
