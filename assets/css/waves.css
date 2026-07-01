@@ -20,6 +20,13 @@ canvas {
     z-index: 0;
 }
 
+.simulator-wrap #simulator {
+    width: calc(100vw * 3.2);
+    height: 100vh;
+    top: 400px;
+    left: -120%;
+}
+
 #overlay {
     position: absolute;
     top: 0;
@@ -46,22 +53,13 @@ canvas {
     pointer-events: auto;
     color: #333333;
     font-family: 'Open Sans', sans-serif;
-    width: min(320px, calc(100vw - 32px));
-    margin: 16px;
+    width: min(360px, calc(100vw - 40px));
+    margin: 20px auto;
     padding: 12px 14px;
+    font-size: 22px;
     background: rgba(255, 255, 255, 0.82);
     border-radius: 8px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-body.layout-wide .station-panel {
-    width: min(360px, calc(100vw - 40px));
-    margin: 20px auto;
-    font-size: 22px;
-}
-
-body.station-hidden .station-panel {
-    display: none;
 }
 
 .station-panel__heading {
@@ -138,20 +136,8 @@ a:visited {
     text-align: center;
 }
 
-body.layout-wide .simulator-wrap #simulator {
-    width: calc(100vw * 3.2);
-    height: 100vh;
-    top: 400px;
-    left: -120%;
-}
-
-body.layout-wide.layout-wide-cinematic .simulator-wrap #simulator {
-    top: -250px;
-    height: 200vh;
-}
-
 @media (max-width: 640px) {
-    body.layout-wide .station-panel {
+    .station-panel {
         font-size: 16px;
     }
 

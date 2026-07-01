@@ -4,15 +4,7 @@ Live WebGL ocean wave simulation driven by [SmartAtlantic ERDDAP](https://www.sm
 
 GPU FFT ocean simulation fed by live wind, wave height, and wave period. The station panel and simulator refresh every 10 seconds.
 
-## URLs
-
-| URL | View |
-|-----|------|
-| `/waves/` | Default with station panel |
-| `/waves/?layout=wide` | Wide canvas |
-| `/waves/?layout=wide&station=0` | Wide, panel hidden |
-
-Legacy `wave.php` / `wave2.php` URLs redirect via `.htaccess`.
+Legacy `wave.php`, `wave2.php`, and `?layout=` URLs redirect to `/waves/`.
 
 ## Structure
 

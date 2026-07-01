@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+- Single wide layout is now the default; removed `?layout=wide` and `?layout=wide&station=0`
+- Wide canvas styles merged into default CSS; layout query handling removed from `lib/layout.php`
+- Legacy `wave.php`, `wave2.php`, and `?layout=` URLs redirect to `/waves/`
+
+## 2026-07-01 — Restructure & docs
+
 ### Added
 - `assets/` tree: `assets/css/`, `assets/js/`, `assets/images/`
 - Deploy smoke tests for static asset URLs
@@ -9,8 +16,7 @@
 ### Changed
 - Static files moved out of the site root into `assets/`
 - `NOTICE` merged into `LICENSE` (Attributions section)
-- README documents project layout and legacy URL handling
-- Twitter Card uses `summary` (no social preview image for now)
+- README trimmed; Twitter Card uses `summary` (no social preview image for now)
 
 ### Removed
 - `wave.php` and `wave2.php` (legacy URLs redirect via `.htaccess` only)

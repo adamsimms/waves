@@ -5,7 +5,6 @@ if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linea
     var simulatorCanvas = document.getElementById(SIMULATOR_CANVAS_ID),
         overlayDiv = document.getElementById(OVERLAY_DIV_ID),
         uiDiv = document.getElementById(UI_DIV_ID),
-        isWideLayout = document.body.classList.contains('layout-wide'),
         reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         orbitSensitivity = reducedMotion ? SENSITIVITY * 0.35 : SENSITIVITY;
 
@@ -127,20 +126,12 @@ if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linea
             simulator.resize(windowWidth, windowHeight);
             uiDiv.style.width = windowWidth + 'px';
             uiDiv.style.height = windowHeight + 'px';
-            if (!isWideLayout) {
-                simulatorCanvas.style.top = '0px';
-                uiDiv.style.top = '0px';
-            }
             width = windowWidth;
             height = windowHeight;
         } else {
             var newHeight = windowWidth / MIN_ASPECT;
             makePerspectiveMatrix(projectionMatrix, FOV, windowWidth / newHeight, NEAR, FAR);
             simulator.resize(windowWidth, newHeight);
-            if (!isWideLayout) {
-                simulatorCanvas.style.top = (windowHeight - newHeight) * 0.5 + 'px';
-                uiDiv.style.top = (windowHeight - newHeight) * 0.5 + 'px';
-            }
             uiDiv.style.width = windowWidth + 'px';
             uiDiv.style.height = newHeight + 'px';
             width = windowWidth;
