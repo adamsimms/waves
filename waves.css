@@ -27,6 +27,11 @@ canvas {
     z-index: 2;
     cursor: grab;
     touch-action: none;
+    outline: none;
+}
+
+#overlay:focus-visible {
+    box-shadow: inset 0 0 0 3px rgba(52, 137, 189, 0.75);
 }
 
 #ui {

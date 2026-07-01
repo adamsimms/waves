@@ -81,6 +81,40 @@ if (hasWebGLSupportWithExtensions(['OES_texture_float', 'OES_texture_float_linea
     overlayDiv.addEventListener('touchend', onPointerUp, { passive: false });
     overlayDiv.addEventListener('touchcancel', onPointerUp, { passive: false });
 
+    var keyOrbitStep = 0.02;
+
+    function onKeyDown(event) {
+        var target = event.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+            return;
+        }
+
+        var step = orbitSensitivity * keyOrbitStep;
+        switch (event.key) {
+            case 'ArrowLeft':
+                camera.changeAzimuth(-step);
+                event.preventDefault();
+                break;
+            case 'ArrowRight':
+                camera.changeAzimuth(step);
+                event.preventDefault();
+                break;
+            case 'ArrowUp':
+                camera.changeElevation(-step);
+                event.preventDefault();
+                break;
+            case 'ArrowDown':
+                camera.changeElevation(step);
+                event.preventDefault();
+                break;
+            default:
+                break;
+        }
+    }
+
+    window.addEventListener('keydown', onKeyDown, false);
+    overlayDiv.focus();
+
     var onresize = function () {
         var windowWidth = window.innerWidth,
             windowHeight = window.innerHeight;

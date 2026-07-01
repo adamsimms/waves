@@ -99,6 +99,8 @@ jobs:
             --exclude '.github/' \
             --exclude 'cache/erddap-latest.json' \
             --exclude 'cache/erddap.lock' \
+            --exclude 'vendor/' \
+            --exclude '.phpunit.cache/' \
             -e "ssh -i ${HOME}/.ssh/deploy_key -o BatchMode=yes -p 22 -l ${user}" \
             ./ "${dest}"
 
@@ -121,5 +123,6 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run != true }}
         run: |
           set -euo pipefail
-          curl -fsS "https://www.pinchards.is/waves/call-api.php" | head -c 200
-          echo
+          curl -fsS "https://www.pinchards.is/waves/call-api.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data"
+          curl -fsS "https://www.pinchards.is/waves/health.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'status' in data"
+          echo "Smoke tests passed."

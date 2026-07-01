@@ -12,7 +12,7 @@
         var stationName = document.getElementById('station-name');
         var datetime = document.getElementById('station-datetime');
         var wind = document.getElementById('station-wind');
-        var size = document.getElementById('station-size');
+        var period = document.getElementById('station-period');
         var choppiness = document.getElementById('station-choppiness');
 
         if (stationName && data.station_name) {
@@ -29,8 +29,8 @@
         if (wind && data.wind !== undefined) {
             wind.textContent = formatDecimal(data.wind, WIND_SPEED_DECIMAL_PLACES);
         }
-        if (size && data.size !== undefined) {
-            size.textContent = formatDecimal(data.size, SIZE_DECIMAL_PLACES);
+        if (period && data.wave_period !== undefined) {
+            period.textContent = formatDecimal(data.wave_period, WAVE_PERIOD_DECIMAL_PLACES);
         }
         if (choppiness && data.choppiness !== undefined) {
             choppiness.textContent = formatDecimal(data.choppiness, CHOPPINESS_DECIMAL_PLACES);
@@ -95,6 +95,7 @@
             wind_x: station.windX,
             wind_y: station.windY,
             size: station.size,
+            wave_period: station.wavePeriod,
             choppiness: station.choppiness
         });
     }

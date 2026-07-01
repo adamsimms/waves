@@ -9,7 +9,7 @@ $page = resolve_page_layout();
 $station = station_data_with_fallback();
 $client_station = station_client_payload($station);
 $stale_notice = !empty($station['stale']);
-$og_image = SITE_BASE_URL . '/og-image.svg';
+$og_image = SITE_BASE_URL . '/og-image.png';
 ?>
 <!DOCTYPE html>
 <html lang="en-CA">
@@ -40,7 +40,7 @@ $og_image = SITE_BASE_URL . '/og-image.svg';
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link href="waves.css" rel="stylesheet">
 
     <script type="application/ld+json">
@@ -66,7 +66,7 @@ $og_image = SITE_BASE_URL . '/og-image.svg';
 </head>
 
 <body class="<?php echo htmlspecialchars(implode(' ', $page['body_classes']), ENT_QUOTES, 'UTF-8'); ?>">
-    <div id="overlay" aria-label="Drag to orbit the wave view"></div>
+    <div id="overlay" tabindex="0" aria-label="Drag, swipe, or use arrow keys to orbit the wave view"></div>
 
     <main id="ui">
         <section class="station-panel" id="station-panel" aria-label="Buoy conditions">
@@ -86,18 +86,18 @@ $og_image = SITE_BASE_URL . '/og-image.svg';
                     <dd><span id="station-wind"></span> m/s</dd>
                 </div>
                 <div>
-                    <dt>Size</dt>
-                    <dd><span id="station-size"></span> m</dd>
+                    <dt>Wave period</dt>
+                    <dd><span id="station-period"></span> s</dd>
                 </div>
                 <div>
-                    <dt>Choppiness</dt>
-                    <dd><span id="station-choppiness"></span></dd>
+                    <dt>Wave height</dt>
+                    <dd><span id="station-choppiness"></span> m</dd>
                 </div>
             </dl>
             <p class="station-panel__source">
                 Live data from
                 <a href="https://www.smartatlantic.ca/erddap/" rel="noopener noreferrer">SmartAtlantic ERDDAP</a>.
-                Drag or swipe to orbit the view.
+                Drag, swipe, or use arrow keys to orbit the view.
             </p>
         </section>
     </main>

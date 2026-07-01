@@ -66,6 +66,7 @@ function station_client_payload(array $station): array
         'windX' => $station['wind_x'],
         'windY' => $station['wind_y'],
         'size' => $station['size'],
+        'wavePeriod' => $station['wave_period'] ?? max(0.0, (float) $station['size'] - 100.0),
         'choppiness' => $station['choppiness'],
         'stale' => !empty($station['stale']),
     ];

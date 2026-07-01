@@ -3,7 +3,23 @@
 ## Unreleased
 
 ### Added
-- `lib/layout.php` for layout flags, canonical URLs, and client payload shaping
+- `og-image.png` for social link previews
+- PHP lint + PHPUnit workflow (`.github/workflows/php.yml`)
+- `health.php` monitoring endpoint
+- Scheduled production uptime checks (`.github/workflows/uptime.yml`)
+- Keyboard orbit controls (arrow keys)
+- PHPUnit coverage for `lib/erddap.php`
+- Content-Security-Policy header in `.htaccess`
+- `wave_period` exposed in API JSON and station readout
+
+### Changed
+- Station panel labels: **Wave period** (seconds) and **Wave height** (metres)
+- Google Fonts loaded via CSS2 API (`fonts.googleapis.com/css2`)
+- Open Graph / Twitter images point to `og-image.png`
+
+## 2026-07-01 — Pass 2
+
+### Added
 - Named ERDDAP column parsing via `columnNames`
 - Wind direction support (`wind_dir_avg` → `wind_x` / `wind_y`)
 - ERDDAP cache lock to prevent upstream stampedes

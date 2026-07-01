@@ -173,6 +173,7 @@ function erddap_build_station_data(array $fields, array $previous): array
         'wind_x' => $components['wind_x'],
         'wind_y' => $components['wind_y'],
         'size' => 100 + $wave_period,
+        'wave_period' => $wave_period,
         'choppiness' => $choppiness,
         'longitude' => erddap_optional_float($fields['longitude'] ?? null) ?? erddap_optional_float($previous['longitude'] ?? null),
         'latitude' => erddap_optional_float($fields['latitude'] ?? null) ?? erddap_optional_float($previous['latitude'] ?? null),
@@ -366,6 +367,7 @@ function station_data_to_json(array $data): string
         'wind_x' => $data['wind_x'],
         'wind_y' => $data['wind_y'],
         'size' => $data['size'],
+        'wave_period' => $data['wave_period'] ?? max(0.0, (float) $data['size'] - 100.0),
         'choppiness' => $data['choppiness'],
     ], JSON_UNESCAPED_SLASHES) ?: '{}';
 }
@@ -410,6 +412,7 @@ function erddap_default_station_data(): array
         'wind_x' => $components['wind_x'],
         'wind_y' => $components['wind_y'],
         'size' => 250.0,
+        'wave_period' => 150.0,
         'choppiness' => 1.5,
         'longitude' => null,
         'latitude' => null,

@@ -2,3 +2,5 @@
 .DS_Store
 cache/erddap-latest.json
 cache/erddap.lock
+vendor/
+.phpunit.cache/
