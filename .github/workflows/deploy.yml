@@ -45,7 +45,7 @@ jobs:
             exit 1
           fi
           host="$(printf '%s' "${FTP_SERVER}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-          ssh-keyscan -H "${host}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -4 -H "${host}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Validate deploy secrets
         env:
@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           host="$(printf '%s' "${FTP_SERVER}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
           user="$(printf '%s' "${FTP_USERNAME}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=20 -p 22 \
+          ssh -4 -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=20 -p 22 \
             "${user}@${host}" "echo SSH OK from GitHub Actions"
 
       - name: SFTP deploy (rsync over SSH)
@@ -101,7 +101,7 @@ jobs:
             --exclude 'cache/erddap.lock' \
             --exclude 'vendor/' \
             --exclude '.phpunit.cache/' \
-            -e "ssh -i ${HOME}/.ssh/deploy_key -o BatchMode=yes -p 22 -l ${user}" \
+            -e "ssh -4 -i ${HOME}/.ssh/deploy_key -o BatchMode=yes -p 22 -l ${user}" \
             ./ "${dest}"
 
       - name: Ensure cache directory is writable
@@ -116,7 +116,7 @@ jobs:
           user="$(printf '%s' "${FTP_USERNAME}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
           server_dir="$(printf '%s' "${FTP_SERVER_DIR}" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
           server_dir="${server_dir%/}/waves"
-          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -p 22 "${user}@${host}" \
+          ssh -4 -i ~/.ssh/deploy_key -o BatchMode=yes -p 22 "${user}@${host}" \
             "mkdir -p '${server_dir}/cache' && chmod 775 '${server_dir}/cache'"
 
       - name: Smoke test production
