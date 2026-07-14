@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check homepage
-        run: curl -fsS -o /dev/null -w "%{http_code}\n" "https://www.pinchards.is/waves/"
+        run: curl -fsS -o /dev/null -w "%{http_code}\n" "https://art.adamsimms.xyz/waves/"
 
       - name: Check station API
         run: |
           set -euo pipefail
-          body="$(curl -fsS "https://www.pinchards.is/waves/call-api.php")"
+          body="$(curl -fsS "https://art.adamsimms.xyz/waves/call-api")"
           echo "$body" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data and 'wave_period' in data, data"
 
       - name: Check health endpoint
         run: |
           set -euo pipefail
-          body="$(curl -sS "https://www.pinchards.is/waves/health.php")"
+          body="$(curl -sS "https://art.adamsimms.xyz/waves/health")"
           echo "$body" | python3 -c "import json,sys; data=json.load(sys.stdin); assert data.get('status') in ('ok', 'degraded'), data"
