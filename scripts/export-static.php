@@ -92,7 +92,7 @@ $html = <<<HTML
             <p class="station-panel__station" id="station-name"></p>
             <p class="station-panel__meta">
                 <time id="station-datetime"></time>
-                <span class="station-panel__stale" hidden>Connecting to buoy…</span>
+                <span class="station-panel__stale" hidden aria-live="polite"></span>
             </p>
             <dl class="station-panel__metrics">
                 <div>

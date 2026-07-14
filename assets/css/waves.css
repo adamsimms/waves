@@ -83,10 +83,15 @@ canvas {
 }
 
 .station-panel__stale {
-    display: inline-block;
+    display: none;
     margin-left: 8px;
     color: #8a5a00;
     font-size: 0.85em;
+}
+
+/* Prefer class over [hidden] — display:inline-block used to override the hidden attribute. */
+.station-panel__stale.is-visible {
+    display: inline-block;
 }
 
 .station-panel__metrics {

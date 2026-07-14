@@ -3,9 +3,25 @@
 
     var POLL_INTERVAL_MS = 10000;
     var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var hasLiveReading = false;
 
     function formatDecimal(value, places) {
         return Number(value).toFixed(places);
+    }
+
+    function setStaleVisible(stale, visible, message) {
+        if (!stale) {
+            return;
+        }
+        if (visible) {
+            stale.hidden = false;
+            stale.classList.add('is-visible');
+            stale.textContent = message || 'Data may be stale';
+        } else {
+            stale.hidden = true;
+            stale.classList.remove('is-visible');
+            stale.textContent = '';
+        }
     }
 
     function setStationReadout(data) {
@@ -36,15 +52,7 @@
         if (choppiness && data.choppiness !== undefined) {
             choppiness.textContent = formatDecimal(data.choppiness, CHOPPINESS_DECIMAL_PLACES);
         }
-        if (stale) {
-            if (data.stale) {
-                stale.hidden = false;
-                stale.textContent = data.stale_message || 'Data may be stale';
-            } else {
-                stale.hidden = true;
-                stale.textContent = '';
-            }
-        }
+        setStaleVisible(stale, !!data.stale, data.stale_message);
     }
 
     function applyToSimulator(data) {
@@ -72,7 +80,11 @@
 
     function updateFromPayload(data) {
         setStationReadout(data);
-        applyToSimulator(data);
+        try {
+            applyToSimulator(data);
+        } catch (err) {
+            // Readout already updated; simulator errors should not block polling.
+        }
     }
 
     function fetchLatestData() {
@@ -89,14 +101,26 @@
                 }
                 return response.json();
             })
-            .then(updateFromPayload)
+            .then(function (data) {
+                if (!data || data.error || data.wind === undefined) {
+                    throw new Error((data && data.error) || 'Invalid station payload');
+                }
+                hasLiveReading = true;
+                updateFromPayload(data);
+            })
             .catch(function () {
                 // Keep the last rendered values when polling fails.
+                setStaleVisible(
+                    document.querySelector('.station-panel__stale'),
+                    true,
+                    hasLiveReading ? 'Data may be stale' : 'Connecting to buoy…'
+                );
             });
     }
 
     function initStationReadout() {
         var station = window.STATION || {};
+        hasLiveReading = !station.stale;
         updateFromPayload({
             station_name: station.name,
             time: station.time,

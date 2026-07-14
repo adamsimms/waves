@@ -74,7 +74,7 @@ $stale_notice = !empty($station['stale']);
                     <?php echo htmlspecialchars((string) $station['time_display'], ENT_QUOTES, 'UTF-8'); ?>
                 </time>
                 <?php if ($stale_notice): ?>
-                    <span class="station-panel__stale">Data may be stale</span>
+                    <span class="station-panel__stale is-visible">Data may be stale</span>
                 <?php endif; ?>
             </p>
             <dl class="station-panel__metrics">
