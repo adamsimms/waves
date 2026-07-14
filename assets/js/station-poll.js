@@ -14,6 +14,7 @@
         var wind = document.getElementById('station-wind');
         var period = document.getElementById('station-period');
         var choppiness = document.getElementById('station-choppiness');
+        var stale = document.querySelector('.station-panel__stale');
 
         if (stationName && data.station_name) {
             stationName.textContent = data.station_name;
@@ -34,6 +35,15 @@
         }
         if (choppiness && data.choppiness !== undefined) {
             choppiness.textContent = formatDecimal(data.choppiness, CHOPPINESS_DECIMAL_PLACES);
+        }
+        if (stale) {
+            if (data.stale) {
+                stale.hidden = false;
+                stale.textContent = data.stale_message || 'Data may be stale';
+            } else {
+                stale.hidden = true;
+                stale.textContent = '';
+            }
         }
     }
 
@@ -96,12 +106,15 @@
             wind_y: station.windY,
             size: station.size,
             wave_period: station.wavePeriod,
-            choppiness: station.choppiness
+            choppiness: station.choppiness,
+            stale: !!station.stale,
+            stale_message: station.stale ? 'Connecting to buoy…' : ''
         });
     }
 
     function startPolling() {
         initStationReadout();
+        fetchLatestData();
         window.setInterval(fetchLatestData, POLL_INTERVAL_MS);
     }
 

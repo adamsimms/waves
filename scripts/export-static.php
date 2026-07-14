@@ -30,6 +30,7 @@ if (!is_dir($out) && !mkdir($out, 0755, true) && !is_dir($out)) {
 $station = erddap_default_station_data();
 $station['stale'] = true;
 $client = station_client_payload($station);
+$client['stale'] = true;
 
 $pageTitle = "Live Ocean Waves — St. John's Buoy | SmartAtlantic";
 $pageDescription = 'Real-time WebGL ocean wave simulation driven by live wind and wave data from the SmartAtlantic St. John\'s buoy station off Newfoundland.';
@@ -91,7 +92,7 @@ $html = <<<HTML
             <p class="station-panel__station" id="station-name"></p>
             <p class="station-panel__meta">
                 <time id="station-datetime"></time>
-                <span class="station-panel__stale">Connecting to buoy…</span>
+                <span class="station-panel__stale" hidden>Connecting to buoy…</span>
             </p>
             <dl class="station-panel__metrics">
                 <div>
