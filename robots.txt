@@ -1,4 +1,1 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://www.pinchards.is/waves/sitemap.xml
+Sitemap: https://art.adamsimms.xyz/waves/sitemap.xml

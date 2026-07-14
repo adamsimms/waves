@@ -1,24 +1,21 @@
 # Waves
 
-Live WebGL ocean wave simulation driven by [SmartAtlantic ERDDAP](https://www.smartatlantic.ca/erddap/) buoy data (St. John's). [pinchards.is/waves/](https://www.pinchards.is/waves/)
+Live WebGL ocean wave simulation driven by [SmartAtlantic ERDDAP](https://www.smartatlantic.ca/erddap/) buoy data (St. John's).
 
-GPU FFT ocean simulation fed by live wind, wave height, and wave period. The station panel and simulator refresh every 10 seconds.
+**Canonical:** [art.adamsimms.xyz/waves/](https://art.adamsimms.xyz/waves/)
 
-Legacy `wave.php`, `wave2.php`, and `?layout=` URLs redirect to `/waves/`.
+GPU FFT ocean simulation fed by live wind, wave height, and wave period. The station panel and simulator refresh about every 10 seconds. Live data comes from the art Pages Function at `/waves/call-api` (health: `/waves/health`).
 
 ## Structure
 
 ```
-index.php, call-api.php, health.php   # endpoints
-lib/                                  # ERDDAP fetch, layout
-assets/css/, assets/js/, assets/images/
-cache/                                # ERDDAP cache (writable)
+assets/css/, assets/js/, assets/images/   # front-end
+lib/                                      # ERDDAP mapping helpers (build/test)
+scripts/                                  # static export for art assemble
 tests/
 ```
 
 ## Data
-
-Mapped in `lib/erddap.php` by column name:
 
 | Output | ERDDAP field |
 |--------|--------------|
@@ -27,21 +24,22 @@ Mapped in `lib/erddap.php` by column name:
 | Wave period (s) | `wave_period_max` |
 | Wave height (m) | `wave_ht_max` |
 
-Cached 60s in `cache/erddap-latest.json`. `NaN` values fall back to the previous reading when possible.
-
 ## Development
 
+Serve `assets/` + exported static page, or prefer verifying on art after assemble. WebGL float textures required.
+
 ```bash
-php -S localhost:8080
-composer install && composer exec phpunit
+composer install && composer exec phpunit   # unit tests for ERDDAP helpers
 ```
 
-Requires PHP 8.0+ (`allow_url_fopen`) and WebGL float textures.
+Static HTML for Pages:
 
-## Deploy
+```bash
+# used by art assemble; see art PHASE4-SIBLINGS
+```
 
-Push to `main` → rsync to DreamHost (`/.github/workflows/deploy.yml`).
+## Ship
 
-Secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_SERVER_DIR`, `SSH_DEPLOY_KEY`.
+Production is **art.adamsimms.xyz** (assembled into `/waves/` + Functions). Uptime checks hit art.
 
 MIT — see [LICENSE](LICENSE). Changes: [CHANGELOG.md](CHANGELOG.md).

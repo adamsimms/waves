@@ -1,8 +1,5 @@
-# Phase 5 retired — DreamHost rsync disabled (canonical: art.adamsimms.xyz/waves/).
-# workflow_dispatch kept for emergency rollback only; push no longer deploys.
-#
-# Secrets: FTP_SERVER, FTP_USERNAME, FTP_SERVER_DIR, SSH_DEPLOY_KEY
-# (same DreamHost deploy key as pinchards.is; FTP_SERVER_DIR is the site root)
+# Emergency publish only — production is art.adamsimms.xyz/waves/ via assemble.
+# Do not re-enable automatic push publish.
 name: Deploy
 
 on:
@@ -121,12 +118,10 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run != true }}
         run: |
           set -euo pipefail
-          base="https://www.pinchards.is/waves"
-          curl -fsS "${base}/call-api.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data"
-          curl -fsS "${base}/health.php" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'status' in data"
+          base="https://art.adamsimms.xyz/waves"
+          curl -fsS "${base}/call-api" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data"
+          curl -fsS "${base}/health" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'status' in data"
           curl -fsS -o /dev/null "${base}/assets/css/waves.css"
           curl -fsS -o /dev/null "${base}/assets/js/waves.js"
           curl -fsS -o /dev/null "${base}/assets/images/favicon.svg"
-          code="$(curl -fsS -o /dev/null -w '%{http_code}' "${base}/wave.php")"
-          test "${code}" = "301" -o "${code}" = "200"
           echo "Smoke tests passed."

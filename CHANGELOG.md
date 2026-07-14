@@ -26,7 +26,7 @@
 ## 2026-07-01 — Pass 3
 
 ### Added
-- PHP lint + PHPUnit CI, `health.php`, uptime workflow
+- PHPUnit CI, health endpoint, uptime workflow
 - Keyboard orbit, CSP header, `wave_period` in API JSON
 
 ### Changed
