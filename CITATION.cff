@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: Waves
+abstract: >-
+  Live WebGL ocean wave simulation driven by SmartAtlantic ERDDAP
+  buoy data (St. John's).
+authors:
+  - family-names: Simms
+    given-names: Adam
+    email: hello@adamsimms.xyz
+license: MIT
+date-released: "2026-06-29"
+url: "https://art.adamsimms.xyz/waves/"
+repository-code: "https://github.com/adamsimms/waves"
