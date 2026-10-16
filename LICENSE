@@ -31,7 +31,7 @@ implementation lineage is commonly associated with interactive WebGL ocean
 experiments built on Jerry Tessendorf's FFT wave model.
 
 Project-specific work includes SmartAtlantic buoy integration, PHP ERDDAP
-proxying, layout consolidation, station polling, and pinchards.is deployment.
+proxying, layout consolidation, station polling, and art.adamsimms.xyz assemble.
 
 **Data:** [SmartAtlantic ERDDAP](https://www.smartatlantic.ca/erddap/)
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-const SITE_BASE_URL = 'https://www.pinchards.is/waves';
+const SITE_BASE_URL = 'https://art.adamsimms.xyz/waves';
 const ASSETS_URL = 'assets';
 
 /**
