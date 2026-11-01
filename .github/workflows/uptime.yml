@@ -5,21 +5,24 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
+env:
+  CURL_OPTS: --retry 3 --retry-delay 10 --retry-all-errors --max-time 30
+
 jobs:
   check-production:
     runs-on: ubuntu-latest
     steps:
       - name: Check homepage
-        run: curl -fsS -o /dev/null -w "%{http_code}\n" "https://art.adamsimms.xyz/waves/"
+        run: curl $CURL_OPTS -fsS -o /dev/null -w "%{http_code}\n" "https://art.adamsimms.xyz/waves/"
 
       - name: Check station API
         run: |
           set -euo pipefail
-          body="$(curl -fsS "https://art.adamsimms.xyz/waves/call-api")"
+          body="$(curl $CURL_OPTS -fsS "https://art.adamsimms.xyz/waves/call-api")"
           echo "$body" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data and 'wave_period' in data, data"
 
       - name: Check health endpoint
         run: |
           set -euo pipefail
-          body="$(curl -sS "https://art.adamsimms.xyz/waves/health")"
+          body="$(curl $CURL_OPTS -sS "https://art.adamsimms.xyz/waves/health")"
           echo "$body" | python3 -c "import json,sys; data=json.load(sys.stdin); assert data.get('status') in ('ok', 'degraded'), data"
