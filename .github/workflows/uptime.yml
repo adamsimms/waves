@@ -5,21 +5,32 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
+env:
+  CURL_OPTS: --retry 3 --retry-delay 10 --retry-all-errors --max-time 30
+
 jobs:
   check-production:
     runs-on: ubuntu-latest
     steps:
       - name: Check homepage
-        run: curl -fsS -o /dev/null -w "%{http_code}\n" "https://art.adamsimms.xyz/waves/"
+        run: |
+          set -euo pipefail
+          out="$(mktemp)"
+          trap 'rm -f "$out"' EXIT
+          curl $CURL_OPTS -fsS -o "$out" -w "%{http_code}\n" "https://art.adamsimms.xyz/waves/"
 
       - name: Check station API
         run: |
           set -euo pipefail
-          body="$(curl -fsS "https://art.adamsimms.xyz/waves/call-api")"
-          echo "$body" | python3 -c "import json,sys; data=json.load(sys.stdin); assert 'wind' in data and 'wave_period' in data, data"
+          out="$(mktemp)"
+          trap 'rm -f "$out"' EXIT
+          curl $CURL_OPTS -fsS -o "$out" "https://art.adamsimms.xyz/waves/call-api"
+          python3 -c "import json,sys; data=json.load(open(sys.argv[1])); assert 'wind' in data and 'wave_period' in data, data" "$out"
 
       - name: Check health endpoint
         run: |
           set -euo pipefail
-          body="$(curl -sS "https://art.adamsimms.xyz/waves/health")"
-          echo "$body" | python3 -c "import json,sys; data=json.load(sys.stdin); assert data.get('status') in ('ok', 'degraded'), data"
+          out="$(mktemp)"
+          trap 'rm -f "$out"' EXIT
+          curl $CURL_OPTS -sS -o "$out" "https://art.adamsimms.xyz/waves/health"
+          python3 -c "import json,sys; data=json.load(open(sys.argv[1])); assert data.get('status') in ('ok', 'degraded'), data" "$out"
