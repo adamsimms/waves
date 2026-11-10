@@ -92,6 +92,11 @@ jobs:
             --exclude '.git/' \
             --exclude '.git*/' \
             --exclude '.github/' \
+            --exclude '.cursor/' \
+            --exclude 'AGENTS.md' \
+            --exclude 'CLAUDE.md' \
+            --exclude 'GEMINI.md' \
+            --exclude '.env*' \
             --exclude 'cache/erddap-latest.json' \
             --exclude 'cache/erddap.lock' \
             --exclude 'vendor/' \
